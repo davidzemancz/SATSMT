@@ -1,0 +1,4 @@
+bin/
+obj/
+scratch_*.out
+scratch_*.err

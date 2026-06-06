@@ -1,0 +1,5 @@
+# verzujeme jen solver/ a reports/, zbytek (slides, docs, hws, tasks) jsou podklady
+/*
+!/.gitignore
+!/solver/
+!/reports/

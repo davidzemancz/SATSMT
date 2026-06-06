@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SatSolver/SatSolver.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SatSolver.Tests/SatSolver.Tests.csproj" />
+  </Folder>
+</Solution>
