@@ -1,4 +1,5 @@
 using SatSolver.Cnf;
+using SatSolver.Encoding;
 
 namespace SatSolver.Parsing;
 
@@ -15,8 +16,9 @@ public enum InputFormat
 // =====================================================================
 //  InputLoader - detekce formatu + nacteni vstupu rovnou jako CNF
 // =====================================================================
-// Maly helper, at to nemusim resit v kazdem commandu zvlast. Zatim umi
-// jen DIMACS; SMT-LIB (.sat) se zapne az bude hotovy Tseitin (ukol 1).
+// Maly helper, at to nemusim resit v kazdem commandu zvlast. SMT-LIB vstup
+// se pri nacteni rovnou prozene Tseitinem, takze ven leze vzdycky CNF a
+// zbytek solveru uz o ".sat" formatu vubec nemusi vedet.
 public static class InputLoader
 {
     // Hadame format podle pripony (.cnf = DIMACS, .sat = SMT-LIB).
@@ -32,12 +34,13 @@ public static class InputLoader
         };
     }
 
-    // Nacte text v danem formatu a vrati CNF. Zatim podporuje jen DIMACS.
+    // Nacte text v danem formatu a vrati CNF (SMT-LIB cestou pres Tseitina).
     public static CnfFormula LoadAsCnf(string text, InputFormat format, bool useEquivalences = true)
     {
         return format switch
         {
             InputFormat.Dimacs => DimacsParser.Parse(text),
+            InputFormat.SmtLib => new TseitinEncoder(useEquivalences).Encode(SmtLibParser.Parse(text)),
             _ => throw new ArgumentOutOfRangeException(nameof(format))
         };
     }
