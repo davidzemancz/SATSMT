@@ -1,0 +1,24 @@
+c Vstupni promenne (CNF index -> nazev):
+c   1 -> a1
+c   2 -> a2
+c   3 -> a3
+c   4 -> a4
+c   5 -> a5
+c Pomocne promenne:
+c   6, 7, 8, 9
+c Koren: 9
+c
+p cnf 9 13
+-6 4 0
+-6 5 0
+6 -4 -5 0
+-7 3 0
+-7 6 0
+7 -3 -6 0
+-8 2 0
+-8 7 0
+8 -2 -7 0
+-9 1 8 0
+9 -1 0
+9 -8 0
+9 0

@@ -1,0 +1,7 @@
+c Klasicky priklad nesplnitelne formule (kap. 1):
+c (x v y)(-x v y)(x v -y)(-x v -y)
+p cnf 2 4
+1 2 0
+-1 2 0
+1 -2 0
+-1 -2 0
