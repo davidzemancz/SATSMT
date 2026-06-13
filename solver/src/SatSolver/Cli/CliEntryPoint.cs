@@ -5,6 +5,8 @@ namespace SatSolver.Cli;
 // =====================================================================
 // Prvni argument je prikaz, zbytek jsou jeho parametry:
 //   formula2cnf  - Tseitinovo kodovani NNF -> DIMACS (ukol 1)
+//   solve        - reseni SAT (ukol 2, zatim DPLL)
+//   dpll         - zkratka pro zakladni DPLL (ukol 2)
 //   help         - napoveda
 public static class CliEntryPoint
 {
@@ -28,6 +30,8 @@ public static class CliEntryPoint
             return command switch
             {
                 "formula2cnf" => Formula2CnfCommand.Run(rest),
+                "solve" => SolveCommand.Run(rest),
+                "dpll" => SolveCommand.Run(PrependDpllDefaults(rest)),
                 "help" or "--help" or "-h" => PrintUsageAndOk(),
                 _ => UnknownCommand(command)
             };
@@ -37,6 +41,13 @@ public static class CliEntryPoint
             Console.Error.WriteLine($"Chyba: {ex.Message}");
             return 2;
         }
+    }
+
+    // "dpll" je jen solve s predvyplnenym adjacency propagatorem (ukol 2).
+    private static string[] PrependDpllDefaults(string[] rest)
+    {
+        var defaults = new[] { "--prop", "adj" };
+        return defaults.Concat(rest).ToArray();
     }
 
     private static int UnknownCommand(string command)
@@ -62,8 +73,16 @@ SAT solver - pouziti:
   formula2cnf [vstup [vystup]] [--equiv | --implication]
       Prevede formuli v NNF (SMT-LIB) na CNF v DIMACS pomoci Tseitina.
       Bez souboru cte stdin a pise na stdout.
-      --equiv        definice hradel jako ekvivalence (vychozi)
-      --implication  jen implikace zleva doprava (Plaisted-Greenbaum)
+
+  solve [vstup] [prepinace]
+      Vyresi SAT (zatim DPLL). Format se pozna podle pripony (.cnf / .sat)
+      nebo prepinacem --format cnf|sat.
+      --prop adj                   propagace (adjacency lists)
+      --time-limit S               casovy limit v sekundach
+      --format cnf|sat             vynutit format vstupu
+
+  dpll [vstup]
+      Zkratka pro zakladni DPLL (= solve --prop adj).
 """);
     }
 }

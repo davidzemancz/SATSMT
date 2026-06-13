@@ -6,7 +6,11 @@
 
 ## Spousteni
 
-    dotnet run --project src/SatSolver -- formula2cnf [vstup] [vystup]
+    dotnet run --project src/SatSolver -- <prikaz> [args]
 
-Prevede formuli v NNF (.sat) na CNF v DIMACS pres Tseitina.
-Bez souboru cte stdin a pise na stdout. Prepinace --equiv (vychozi) / --implication.
+Prikazy:
+- formula2cnf [vstup] [vystup] - prevod NNF (.sat) na CNF (DIMACS)
+- solve [vstup]                - vyresi SAT (DPLL), vypise SAT/UNSAT (+ model)
+- dpll [vstup]                 - zkratka pro zakladni DPLL
+
+Format vstupu se pozna podle pripony (.cnf = DIMACS, .sat = SMT-LIB).
