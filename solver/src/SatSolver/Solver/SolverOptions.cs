@@ -4,15 +4,17 @@ namespace SatSolver.Solver;
 public enum PropagationMode
 {
     // Adjacency lists (occurrence listy) - jednodussi, ale dela vic prace.
-    AdjacencyList
+    AdjacencyList,
+
+    // Watched literals - lina struktura, dneska standard.
+    WatchedLiterals
 }
 
 // =====================================================================
 //  SolverOptions - co se da na solveru nastavit
 // =====================================================================
-// Zatim toho moc neni (zakladni DPLL z ukolu 2) - jen volba propagacni
-// struktury a casovy limit. Jak budou pribyvat dalsi ukoly, pribudou
-// sem i dalsi prepinace.
+// Zatim zakladni DPLL (ukol 2) + volba propagacni struktury (ukol 3).
+// Jak budou pribyvat dalsi ukoly, pribudou sem i dalsi prepinace.
 public sealed class SolverOptions
 {
     public PropagationMode Propagation { get; set; } = PropagationMode.AdjacencyList;

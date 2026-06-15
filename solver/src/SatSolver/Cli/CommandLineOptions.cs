@@ -34,6 +34,7 @@ public static class CommandLineOptions
                     options.Propagation = Value(args, ref i) switch
                     {
                         "adj" or "adjacency" => PropagationMode.AdjacencyList,
+                        "watched" or "watch" => PropagationMode.WatchedLiterals,
                         var v => throw new ArgumentException($"Neznama hodnota --prop '{v}'.")
                     };
                     break;
@@ -60,7 +61,7 @@ public static class CommandLineOptions
         return options;
     }
 
-    // Naparsuje prepinace rovnou z jednoho retezce (napr. "--prop adj"). Pouziva bench.
+    // Naparsuje prepinace rovnou z jednoho retezce (napr. "--prop watched"). Pouziva bench.
     public static SolverOptions ParseFlags(string flags)
     {
         string[] tokens = flags.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
