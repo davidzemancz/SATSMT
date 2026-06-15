@@ -5,10 +5,11 @@ using SatSolver.Solver;
 namespace SatSolver.Cli;
 
 // =====================================================================
-//  SolveCommand - prikaz "solve" (ukol 2: DPLL)
+//  SolveCommand - prikaz "solve" (ukoly 2-5)
 // =====================================================================
 // Nacte CNF (DIMACS) nebo NNF (SMT-LIB, ten se zakoduje Tseitinem), pusti
-// rekurzivni DPLL a vypise vysledek (SAT/UNSAT), pripadne model a statistiky.
+// nakonfigurovany solver a vypise vysledek (SAT/UNSAT), pripadne model a
+// statistiky.
 public static class SolveCommand
 {
     public static int Run(string[] args)
@@ -26,9 +27,9 @@ public static class SolveCommand
             ?? (inputPath != null ? InputLoader.DetectFromPath(inputPath) : InputFormat.Dimacs);
         CnfFormula cnf = InputLoader.LoadAsCnf(inputText, format);
 
-        // --- vlastni reseni (zatim rekurzivni DPLL) ---
-        var solver = new RecursiveDpll(cnf, options);
-        SolverResult result = solver.Solve();
+        // --- vlastni reseni ---
+        var engine = new SearchEngine(cnf, options);
+        SolverResult result = engine.Solve();
 
         // --- vypis ---
         PrintResult(result, printModel);
