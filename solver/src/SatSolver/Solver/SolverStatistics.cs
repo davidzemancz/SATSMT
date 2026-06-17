@@ -4,9 +4,9 @@ namespace SatSolver.Solver;
 //  SolverStatistics - citace pro mereni a reporty
 // =====================================================================
 // Zadani ukolu 2 chce aspon CPU cas, pocet rozhodnuti a pocet kroku unit
-// propagace. Par dalsich citacu si pridavam na porovnani (hlavne
-// ClausesChecked na porovnani datovych struktur). Nechavam je schvalne jako
-// verejne fieldy - je to jen takovy "bag of counters".
+// propagace. Zbytek citacu jsem si pridal pro porovnani v dalsich ukolech
+// (hlavne ClausesChecked na porovnani adjacency vs watched). Nechavam je
+// schvalne jako verejne fieldy - je to jen takovy "bag of counters".
 public sealed class SolverStatistics
 {
     // Pocet rozhodnuti (vetveni), vcetne preklopeni faze v DPLL.
@@ -15,10 +15,17 @@ public sealed class SolverStatistics
     // Pocet literalu odvozenych unit propagaci (kroky propagace).
     public long Propagations;
 
-    // Pocet konfliktu (klauzule co behem propagace zfalsovatela cela).
+    // Pocet konfliktu (prazdne klauzule co vznikly behem propagace).
     public long Conflicts;
 
-    // Kolikrat se propagator musel kouknout na nejakou klauzuli.
+    // Pocet naucenych klauzuli (CDCL).
+    public long LearnedClauses;
+
+    // Pocet smazanych naucenych klauzuli.
+    public long DeletedClauses;
+
+    // Kolikrat se propagator musel kouknout na nejakou klauzuli. Klicova
+    // metrika na porovnani datovych struktur v ukolu 3.
     public long ClausesChecked;
 
     // Nejvyssi decision level kam jsme se behem hledani dostali.
@@ -36,6 +43,8 @@ public sealed class SolverStatistics
             $"  rozhodnuti           : {Decisions}\n" +
             $"  unit-propagace       : {Propagations}\n" +
             $"  konflikty            : {Conflicts}\n" +
+            $"  naucene klauzule     : {LearnedClauses}\n" +
+            $"  smazane klauzule     : {DeletedClauses}\n" +
             $"  prohlednute klauzule : {ClausesChecked}\n" +
             $"  max. uroven          : {MaxDecisionLevel}";
     }

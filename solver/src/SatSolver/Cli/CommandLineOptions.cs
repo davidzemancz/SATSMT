@@ -8,8 +8,8 @@ namespace SatSolver.Cli;
 //  CommandLineOptions - parsovani prepinacu solveru
 // =====================================================================
 // Sdileny kus kodu pro "solve" (pozdeji i bench), at se konfigurace zadava
-// vsude stejne. Klasicky pruchod argumenty + switch. Neni to zadny poradny
-// argparse, ale pro tenhle projekt to bohate staci.
+// vsude stejne. Klasicky pruchod argumenty + velky switch. Neni to zadny
+// poradny argparse, ale pro tenhle projekt to bohate staci.
 public static class CommandLineOptions
 {
     // Naparsuje prepinace do SolverOptions. Pozicni argumenty (co nezacinaji '-')
@@ -30,6 +30,17 @@ public static class CommandLineOptions
             string arg = args[i];
             switch (arg)
             {
+                case "--dpll":
+                    // DPLL rezim = vypnout CDCL vychytavky
+                    options.SearchMode = SearchMode.Dpll;
+                    options.EnableClauseLearning = false;
+                    options.EnableClauseDeletion = false;
+                    options.EnablePhaseSaving = false;
+                    break;
+                case "--cdcl":
+                    options.SearchMode = SearchMode.Cdcl;
+                    options.EnableClauseLearning = true;
+                    break;
                 case "--prop":
                     options.Propagation = Value(args, ref i) switch
                     {
@@ -38,6 +49,11 @@ public static class CommandLineOptions
                         var v => throw new ArgumentException($"Neznama hodnota --prop '{v}'.")
                     };
                     break;
+                case "--no-learn": options.EnableClauseLearning = false; break;
+                case "--no-delete": options.EnableClauseDeletion = false; break;
+                case "--no-minimize": options.EnableClauseMinimization = false; break;
+                case "--phase-saving": options.EnablePhaseSaving = true; break;
+                case "--no-phase-saving": options.EnablePhaseSaving = false; break;
                 case "--time-limit":
                     // pozor: parsuju s invariant culture, jinak by to na cz locale chtelo carku misto tecky
                     options.TimeLimitSeconds = double.Parse(Value(args, ref i), CultureInfo.InvariantCulture);
@@ -61,7 +77,7 @@ public static class CommandLineOptions
         return options;
     }
 
-    // Naparsuje prepinace rovnou z jednoho retezce (napr. "--prop watched"). Pouziva bench.
+    // Naparsuje prepinace rovnou z jednoho retezce (napr. "--dpll --prop adj"). Pouziva bench.
     public static SolverOptions ParseFlags(string flags)
     {
         string[] tokens = flags.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);

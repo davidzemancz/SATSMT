@@ -5,14 +5,21 @@ using SatSolver.Heuristics;
 namespace SatSolver.Solver;
 
 // =====================================================================
-//  SearchEngine - srdce solveru (zatim DPLL)
+//  SearchEngine - srdce celeho solveru
 // =====================================================================
-// Iterativni engine nad "trailem" (zasobnik prirazeni). Zatim umi cistou
-// DPLL: chronologicky backtracking, bez uceni. Datova struktura propagace
-// i heuristika jsou vymenitelne, engine s nimi mluvi jen pres rozhrani
-// (IPropagator / IDecisionHeuristic). Schvalne je to iterativni a ne
-// rekurzivni - rekurze by na velkych instancich prepetekla stack.
-public sealed class SearchEngine
+// Jeden iterativni engine nad "trailem" (zasobnik prirazeni). Podle
+// SolverOptions se chova bud jako DPLL (chronologicky backtracking, bez
+// uceni), nebo jako CDCL (analyza konfliktu, 1-UIP uceni, backjumping,
+// mazani klauzuli). Schvalne je to iterativni a ne rekurzivni - rekurze
+// by na velkych instancich prepetekla stack.
+//
+// Datova struktura propagace i heuristika jsou vymenitelne, engine s nimi
+// mluvi jen pres rozhrani (IPropagator / IDecisionHeuristic).
+//
+// Trida je rozsekana do dvou souboru (partial): tady je stav + hlavni smycka,
+// v ConflictAnalysis.cs je analyza konfliktu, uceni a mazani klauzuli (jinak
+// by to byl jeden megasoubor a v tom se neda vyznat).
+public sealed partial class SearchEngine
 {
     private readonly SolverOptions _options;
     private readonly SolverStatistics _stats = new();
@@ -25,6 +32,7 @@ public sealed class SearchEngine
     private readonly sbyte[] _value;       // 0 = neprirazeno, +1 = true, -1 = false
     private readonly int[] _level;         // decision level promenne (-1 = neprirazeno)
     private readonly Clause?[] _reason;     // duvodova klauzule (antecedent), null = rozhodnuti/fakt
+    private readonly sbyte[] _savedPhase;  // phase saving: naposled prirazena hodnota (+1/-1, 0 = zadna)
 
     // --- Trail a decision levely ---
     private readonly List<int> _trail = new();        // prirazene literaly v poradi jak prisly
@@ -32,7 +40,13 @@ public sealed class SearchEngine
     private readonly List<bool> _decisionFlipped = new(); // DPLL: byl uz tenhle level preklopen na druhou fazi?
     private int _qhead;                                // hlava fronty pro propagaci (index do _trail)
 
+    // --- Databaze klauzuli ---
+    private readonly List<Clause> _learned = new();   // naucene klauzule (jen CDCL)
     private bool _trivialUnsat;                        // prazdna klauzule na vstupu -> rovnou UNSAT
+
+    // --- Pomocne buffery / citace ---
+    private readonly bool[] _seen;                     // znackovani pri analyze konfliktu
+    private int _maxLearned;
     private readonly Stopwatch _stopwatch = new();
 
     public SearchEngine(CnfFormula formula, SolverOptions options)
@@ -44,6 +58,8 @@ public sealed class SearchEngine
         _value = new sbyte[_varCount + 1];
         _level = new int[_varCount + 1];
         _reason = new Clause?[_varCount + 1];
+        _savedPhase = new sbyte[_varCount + 1];
+        _seen = new bool[_varCount + 1];
         Array.Fill(_level, -1);
 
         // poskladam si vymenitelne komponenty podle configu (viz SolverFactory)
@@ -56,9 +72,11 @@ public sealed class SearchEngine
         foreach (Clause clause in formula.Clauses)
             RegisterClause(clause);
         _heuristic.Initialize(this, formula);
+
+        _maxLearned = Math.Max(100, formula.ClauseCount / 3);
     }
 
-    // ----- par "getteru" co potrebuji propagatory -----
+    // ----- par "getteru" co potrebuji propagatory a analyza konfliktu -----
 
     // Nejvyssi index promenne.
     internal int VarCount => _varCount;
@@ -66,7 +84,7 @@ public sealed class SearchEngine
     // Aktualni decision level (= pocet rozhodnuti na trailu).
     internal int DecisionLevel => _trailLim.Count;
 
-    // Trail (zasobnik prirazenych literalu) - sahaji do nej propagatory.
+    // Trail (zasobnik prirazenych literalu) - sahaji do nej propagatory i analyza.
     internal List<int> Trail => _trail;
 
     // Hlava fronty propagace (index do trailu). Propagator si ji posouva sam.
@@ -92,7 +110,8 @@ public sealed class SearchEngine
     internal bool LiteralIsFalse(int lit) => LiteralValue(lit) < 0;
 
     // Priradi literal na aktualnim levelu s danym duvodem (null = rozhodnuti/fakt).
-    // Vrati false kdyz uz je literal prirazeny opacne (konflikt).
+    // Vrati false kdyz uz je literal prirazeny opacne (konflikt) - to vyuziju hlavne
+    // kdyz na zacatku nahazuju unit klauzule (dve protichudne unit klauzule = UNSAT).
     internal bool Enqueue(int lit, Clause? reason)
     {
         int v = Literal.Var(lit);
@@ -109,7 +128,7 @@ public sealed class SearchEngine
         return true;
     }
 
-    // Zaregistruje klauzuli do solveru. Trivialni pripady resim rovnou tady:
+    // Zaregistruje klauzuli do solveru. Trivialni pripady si resim rovnou tady:
     //   prazdna klauzule -> okamzity UNSAT
     //   unit klauzule    -> hned vynutim literal na levelu 0
     // Klauzule o aspon dvou literalech predam propagatoru.
@@ -143,7 +162,7 @@ public sealed class SearchEngine
         Enqueue(lit, null);
     }
 
-    // Backtrack na dany level: odpriradim vsechno nad nim.
+    // Backtrack na dany level: odpriradim vsechno nad nim (a po ceste si ulozim faze).
     internal void Backtrack(int level)
     {
         if (DecisionLevel <= level)
@@ -153,10 +172,12 @@ public sealed class SearchEngine
         for (int i = _trail.Count - 1; i >= from; i--)
         {
             int v = Literal.Var(_trail[i]);
+            if (_options.EnablePhaseSaving)
+                _savedPhase[v] = _value[v]; // zapamatuj si posledni fazi
             _value[v] = 0;
             _reason[v] = null;
             _level[v] = -1;
-            _heuristic.OnUnassign(v);
+            _heuristic.OnUnassign(v); // VSIDS si promennou vrati do haldy
         }
         _trail.RemoveRange(from, _trail.Count - from);
         _trailLim.RemoveRange(level, _trailLim.Count - level);
@@ -178,7 +199,7 @@ public sealed class SearchEngine
         return new SolverResult(status, model, _stats);
     }
 
-    // ===== Hlavni smycka: propaguj -> (konflikt resi backtrack | jinak rozhodni) =====
+    // ===== Hlavni smycka: propaguj -> (konflikt resi backtrack/uceni | jinak rozhodni) =====
     private SatResult SearchLoop()
     {
         if (_trivialUnsat)
@@ -196,9 +217,28 @@ public sealed class SearchEngine
                 if (DecisionLevel == 0)
                     return SatResult.Unsatisfiable;
 
-                // DPLL: jen chronologicky backtracking (preklopim posledni nepreklopenou volbu)
-                if (!ChronologicalBacktrack())
-                    return SatResult.Unsatisfiable;
+                bool useCdcl = _options.SearchMode == SearchMode.Cdcl && _options.EnableClauseLearning;
+                if (useCdcl)
+                {
+                    // CDCL: naucim se klauzuli (1-UIP) a skocim zpatky na asertivni level.
+                    (int[] learned, int backjump, int lbd) = Analyze(conflict);
+                    _heuristic.OnConflict();
+                    Backtrack(backjump);
+                    AddLearnedClause(learned, lbd);
+
+                    // kdyz uz je naucenych klauzuli moc, cast jich vyhodim
+                    if (_options.EnableClauseDeletion && _learned.Count >= _maxLearned)
+                    {
+                        ReduceClauseDatabase();
+                        _maxLearned += _maxLearned / 10; // limit musi v case rust, jinak bych mazal porad
+                    }
+                }
+                else
+                {
+                    // DPLL: jen chronologicky backtracking (preklopim posledni nepreklopenou volbu)
+                    if (!ChronologicalBacktrack())
+                        return SatResult.Unsatisfiable;
+                }
             }
             else
             {
@@ -218,7 +258,18 @@ public sealed class SearchEngine
     // Vybere dalsi vetvici literal pres heuristiku. Vrati 0 kdyz uz je vsechno prirazene.
     private int NextDecisionLiteral()
     {
-        return _heuristic.PickBranchLiteral();
+        int lit = _heuristic.PickBranchLiteral();
+        if (lit == 0)
+            return 0;
+
+        // phase saving: kdyz mam ulozenou fazi, pouziju ji (prebije fazi z heuristiky)
+        if (_options.EnablePhaseSaving)
+        {
+            int v = Literal.Var(lit);
+            if (_savedPhase[v] != 0)
+                lit = _savedPhase[v] == 1 ? v : -v;
+        }
+        return lit;
     }
 
     // DPLL chronologicky backtracking: najde posledni decision level co jeste nebyl
