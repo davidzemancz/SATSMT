@@ -3,18 +3,19 @@
 Osobni TODO, nic oficialniho. Pak smazat.
 
 ## Plan podle ukolu
-- [x] ukol 1: Tseitin NNF->CNF + DIMACS writer  (hotovo)
-- [ ] ukol 2: DPLL (unit propagace, backtracking)
-- [ ] ukol 3: watched literals
-- [ ] ukol 4: CDCL (1-UIP uceni, restarty)
+- [x] ukol 1: Tseitin NNF->CNF + DIMACS writer
+- [x] ukol 2: DPLL (iterativni trail, nakonec lepsi nez rekurze)
+- [x] ukol 3: watched literals (prvni verze blbe prehazovala watche, prepsano)
+- [x] ukol 4: CDCL - 1-UIP, minimalizace, mazani podle LBD, restarty
 - [ ] ukol 5: heuristiky (VSIDS) + assumptions
 
-## DPLL - jak na to
-- rekurzivne nebo iterativne? Zkusim nejdriv rekurzivne, je jednodussi.
-  POZOR: na velkych instancich muze pretect stack -> mozna predelat na iterativni trail.
-- statistiky: rozhodnuti, propagace, konflikty, cas
-- debug: vypisovat trail a klauzule (DebugDump)
+## CDCL poznamky
+- 1-UIP: rezoluce dozadu dokud nezbyde jediny literal aktualniho levelu
+- asertivni literal dat na index 0, druhy nejvyssi level na index 1 (kvuli watched)
+- LBD = pocet ruznych decision levelu, mazat klauzule s vysokym LBD
+- restarty: Luby vs geometricke (Luby vychazi nepatrne lip)
 
-## Napady
-- literal jako int (DIMACS konvence), promenne 1..n
-- klauzule = int[] (kvuli watched bude potreba menit poradi literalu)
+## TODO pred odevzdanim
+- smazat DebugDump a Preprocessor (mrtvy kod)
+- smazat tyhle poznamky
+- prejmenovat reporty na cislovane (1-report-...)

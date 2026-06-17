@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using SatSolver.Cnf;
 using SatSolver.Heuristics;
+using SatSolver.Restarts;
 
 namespace SatSolver.Solver;
 
@@ -10,8 +11,8 @@ namespace SatSolver.Solver;
 // Jeden iterativni engine nad "trailem" (zasobnik prirazeni). Podle
 // SolverOptions se chova bud jako DPLL (chronologicky backtracking, bez
 // uceni), nebo jako CDCL (analyza konfliktu, 1-UIP uceni, backjumping,
-// mazani klauzuli). Schvalne je to iterativni a ne rekurzivni - rekurze
-// by na velkych instancich prepetekla stack.
+// restarty, mazani klauzuli). Schvalne je to iterativni a ne rekurzivni -
+// rekurze by na velkych instancich prepetekla stack.
 //
 // Datova struktura propagace i heuristika jsou vymenitelne, engine s nimi
 // mluvi jen pres rozhrani (IPropagator / IDecisionHeuristic).
@@ -27,6 +28,7 @@ public sealed partial class SearchEngine
 
     private readonly IPropagator _propagator;
     private readonly IDecisionHeuristic _heuristic;
+    private readonly IRestartStrategy? _restart;
 
     // --- Stav prirazeni (pole indexovana promennou 1.._varCount) ---
     private readonly sbyte[] _value;       // 0 = neprirazeno, +1 = true, -1 = false
@@ -46,6 +48,8 @@ public sealed partial class SearchEngine
 
     // --- Pomocne buffery / citace ---
     private readonly bool[] _seen;                     // znackovani pri analyze konfliktu
+    private long _conflictsSinceRestart;
+    private long _restartThreshold;
     private int _maxLearned;
     private readonly Stopwatch _stopwatch = new();
 
@@ -65,6 +69,7 @@ public sealed partial class SearchEngine
         // poskladam si vymenitelne komponenty podle configu (viz SolverFactory)
         _propagator = SolverFactory.CreatePropagator(options);
         _heuristic = SolverFactory.CreateHeuristic(options);
+        _restart = SolverFactory.CreateRestart(options);
 
         // init: propagator si naalokuje indexy, pak mu nahazim klauzule. Trivialni
         // (prazdne / unit) si vyresim rovnou sam v RegisterClause.
@@ -74,6 +79,7 @@ public sealed partial class SearchEngine
         _heuristic.Initialize(this, formula);
 
         _maxLearned = Math.Max(100, formula.ClauseCount / 3);
+        _restartThreshold = _restart?.NextThreshold() ?? long.MaxValue;
     }
 
     // ----- par "getteru" co potrebuji propagatory a analyza konfliktu -----
@@ -212,6 +218,7 @@ public sealed partial class SearchEngine
             if (conflict != null)
             {
                 _stats.Conflicts++;
+                _conflictsSinceRestart++;
 
                 // konflikt bez jedineho rozhodnuti => formule je nesplnitelna
                 if (DecisionLevel == 0)
@@ -242,9 +249,16 @@ public sealed partial class SearchEngine
             }
             else
             {
-                // zadny konflikt -> cas se rozhodnout
+                // zadny konflikt -> cas se rozhodnout (nebo pripadne restartovat)
                 if (TimeLimitExceeded())
                     return SatResult.Unknown;
+
+                if (_restart != null && _options.Restart != RestartKind.None
+                    && _conflictsSinceRestart >= _restartThreshold)
+                {
+                    DoRestart();
+                    continue;
+                }
 
                 int decision = NextDecisionLiteral();
                 if (decision == 0)
@@ -288,6 +302,16 @@ public sealed partial class SearchEngine
         Decide(Literal.Negate(decisionLit));          // novy level d, opacna faze
         _decisionFlipped[DecisionLevel - 1] = true;    // tenhle level uz znova nepreklapet
         return true;
+    }
+
+    // Restart: zahodim trail (zpatky na level 0), ale naucene klauzule i ulozene faze
+    // zustavaji - to je presne to co restartum dava smysl.
+    private void DoRestart()
+    {
+        _stats.Restarts++;
+        Backtrack(0);
+        _conflictsSinceRestart = 0;
+        _restartThreshold = _restart!.NextThreshold();
     }
 
     private bool TimeLimitExceeded() =>

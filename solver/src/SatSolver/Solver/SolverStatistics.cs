@@ -6,7 +6,8 @@ namespace SatSolver.Solver;
 // Zadani ukolu 2 chce aspon CPU cas, pocet rozhodnuti a pocet kroku unit
 // propagace. Zbytek citacu jsem si pridal pro porovnani v dalsich ukolech
 // (hlavne ClausesChecked na porovnani adjacency vs watched). Nechavam je
-// schvalne jako verejne fieldy - je to jen takovy "bag of counters".
+// schvalne jako verejne fieldy - je to jen takovy "bag of counters", neni
+// duvod kolem toho delat property.
 public sealed class SolverStatistics
 {
     // Pocet rozhodnuti (vetveni), vcetne preklopeni faze v DPLL.
@@ -23,6 +24,9 @@ public sealed class SolverStatistics
 
     // Pocet smazanych naucenych klauzuli.
     public long DeletedClauses;
+
+    // Pocet restartu.
+    public long Restarts;
 
     // Kolikrat se propagator musel kouknout na nejakou klauzuli. Klicova
     // metrika na porovnani datovych struktur v ukolu 3.
@@ -45,6 +49,7 @@ public sealed class SolverStatistics
             $"  konflikty            : {Conflicts}\n" +
             $"  naucene klauzule     : {LearnedClauses}\n" +
             $"  smazane klauzule     : {DeletedClauses}\n" +
+            $"  restarty             : {Restarts}\n" +
             $"  prohlednute klauzule : {ClausesChecked}\n" +
             $"  max. uroven          : {MaxDecisionLevel}";
     }
