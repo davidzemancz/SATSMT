@@ -31,9 +31,10 @@ public static class CommandLineOptions
             switch (arg)
             {
                 case "--dpll":
-                    // DPLL rezim = vypnout CDCL vychytavky
+                    // DPLL rezim = vypnout vsechny CDCL vychytavky
                     options.SearchMode = SearchMode.Dpll;
                     options.EnableClauseLearning = false;
+                    options.Restart = RestartKind.None;
                     options.EnableClauseDeletion = false;
                     options.EnablePhaseSaving = false;
                     break;
@@ -49,11 +50,21 @@ public static class CommandLineOptions
                         var v => throw new ArgumentException($"Neznama hodnota --prop '{v}'.")
                     };
                     break;
+                case "--restart":
+                    options.Restart = Value(args, ref i) switch
+                    {
+                        "none" => RestartKind.None,
+                        "geom" or "geometric" => RestartKind.Geometric,
+                        "luby" => RestartKind.Luby,
+                        var v => throw new ArgumentException($"Neznama strategie restartu '{v}'.")
+                    };
+                    break;
                 case "--no-learn": options.EnableClauseLearning = false; break;
                 case "--no-delete": options.EnableClauseDeletion = false; break;
                 case "--no-minimize": options.EnableClauseMinimization = false; break;
                 case "--phase-saving": options.EnablePhaseSaving = true; break;
                 case "--no-phase-saving": options.EnablePhaseSaving = false; break;
+                case "--restart-base": options.RestartBase = int.Parse(Value(args, ref i)); break;
                 case "--time-limit":
                     // pozor: parsuju s invariant culture, jinak by to na cz locale chtelo carku misto tecky
                     options.TimeLimitSeconds = double.Parse(Value(args, ref i), CultureInfo.InvariantCulture);
