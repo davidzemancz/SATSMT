@@ -20,6 +20,22 @@ public enum PropagationMode
     WatchedLiterals
 }
 
+// Rozhodovaci heuristika (vyber vetviciho literalu).
+public enum HeuristicKind
+{
+    // Prvni neprirazena promenna (trivialni, deterministicke).
+    First,
+
+    // Nahodny vyber promenne i faze.
+    Random,
+
+    // Jeroslow-Wang (staticke skore podle delek klauzuli).
+    JeroslowWang,
+
+    // VSIDS (aktivita promennych rizena konflikty) - nejlepsi z tech co tu mam.
+    Vsids
+}
+
 // Strategie restartu (jen v CDCL).
 public enum RestartKind
 {
@@ -31,13 +47,15 @@ public enum RestartKind
 // =====================================================================
 //  SolverOptions - vsechno co se da na solveru nastavit
 // =====================================================================
-// Cely smysl je ze mam JEDEN engine ktery se da nastavit bud jako zakladni
-// DPLL nebo jako CDCL (a vsechno mezi tim). Defaulty miri na ten lepsi
-// rezim (CDCL + watched + luby).
+// Cely smysl tehle sady ukolu je ze mam JEDEN engine ktery se da nastavit
+// bud jako zakladni DPLL nebo jako plny CDCL (a vsechno mezi tim). Takze
+// misto peti ruznych solveru mam jeden + tenhle config. Defaulty jsou
+// nastavene na "nejlepsi" rezim (CDCL + watched + VSIDS + luby).
 public sealed class SolverOptions
 {
     public SearchMode SearchMode { get; set; } = SearchMode.Cdcl;
     public PropagationMode Propagation { get; set; } = PropagationMode.WatchedLiterals;
+    public HeuristicKind Heuristic { get; set; } = HeuristicKind.Vsids;
     public RestartKind Restart { get; set; } = RestartKind.Luby;
 
     // Uceni klauzuli (ma smysl jen v CDCL).
@@ -52,6 +70,9 @@ public sealed class SolverOptions
     // Phase saving - pri dalsim rozhodovani o promenne pouzij naposled prirazenou fazi.
     public bool EnablePhaseSaving { get; set; } = true;
 
+    // Seed pro nahodnou heuristiku, at jdou vysledky zopakovat.
+    public int RandomSeed { get; set; } = 1;
+
     // Zakladni jednotka restartu (Luby: nasobek, geometric: pocatecni prah).
     public int RestartBase { get; set; } = 100;
 
@@ -60,4 +81,16 @@ public sealed class SolverOptions
 
     // Tvrdy casovy limit v sekundach (0 = bez limitu). Hodi se na bench at to nezamrzne.
     public double TimeLimitSeconds { get; set; } = 0;
+
+    // Pohodlna predvolba: zakladni DPLL presne tak jak to chtelo zadani ukolu 2.
+    public static SolverOptions BasicDpll() => new()
+    {
+        SearchMode = SearchMode.Dpll,
+        Propagation = PropagationMode.AdjacencyList,
+        Heuristic = HeuristicKind.First,
+        Restart = RestartKind.None,
+        EnableClauseLearning = false,
+        EnableClauseDeletion = false,
+        EnablePhaseSaving = false
+    };
 }

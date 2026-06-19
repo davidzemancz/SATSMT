@@ -7,9 +7,9 @@ namespace SatSolver.Cli;
 // =====================================================================
 //  CommandLineOptions - parsovani prepinacu solveru
 // =====================================================================
-// Sdileny kus kodu pro "solve" (pozdeji i bench), at se konfigurace zadava
-// vsude stejne. Klasicky pruchod argumenty + velky switch. Neni to zadny
-// poradny argparse, ale pro tenhle projekt to bohate staci.
+// Sdileny kus kodu pro "solve" i "bench", at se konfigurace zadava vsude
+// stejne. Klasicky pruchod argumenty + velky switch. Neni to zadny poradny
+// argparse, ale pro tenhle projekt to bohate staci.
 public static class CommandLineOptions
 {
     // Naparsuje prepinace do SolverOptions. Pozicni argumenty (co nezacinaji '-')
@@ -50,6 +50,16 @@ public static class CommandLineOptions
                         var v => throw new ArgumentException($"Neznama hodnota --prop '{v}'.")
                     };
                     break;
+                case "--heuristic":
+                    options.Heuristic = Value(args, ref i) switch
+                    {
+                        "first" => HeuristicKind.First,
+                        "random" => HeuristicKind.Random,
+                        "jw" or "jeroslow" => HeuristicKind.JeroslowWang,
+                        "vsids" => HeuristicKind.Vsids,
+                        var v => throw new ArgumentException($"Neznama heuristika '{v}'.")
+                    };
+                    break;
                 case "--restart":
                     options.Restart = Value(args, ref i) switch
                     {
@@ -64,6 +74,7 @@ public static class CommandLineOptions
                 case "--no-minimize": options.EnableClauseMinimization = false; break;
                 case "--phase-saving": options.EnablePhaseSaving = true; break;
                 case "--no-phase-saving": options.EnablePhaseSaving = false; break;
+                case "--seed": options.RandomSeed = int.Parse(Value(args, ref i)); break;
                 case "--restart-base": options.RestartBase = int.Parse(Value(args, ref i)); break;
                 case "--time-limit":
                     // pozor: parsuju s invariant culture, jinak by to na cz locale chtelo carku misto tecky

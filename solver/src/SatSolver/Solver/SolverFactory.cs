@@ -6,9 +6,10 @@ namespace SatSolver.Solver;
 // =====================================================================
 //  SolverFactory - poskladani vymenitelnych komponent solveru
 // =====================================================================
-// Misto if/switch primo v SearchEngine si konkretni tridy poskladam tady.
-// Engine pak zna jen rozhrani (IPropagator, IDecisionHeuristic,
-// IRestartStrategy) a netusi co zrovna jede. Klasicky factory pattern.
+// Misto abych v SearchEngine delal hromadu if/switch a tahal tam vsechny
+// konkretni tridy, dam to sem. Engine pak zna jen rozhrani (IPropagator,
+// IDecisionHeuristic, ...) a vubec netusi jestli jede zrovna VSIDS nebo random.
+// Klasicky factory pattern.
 internal static class SolverFactory
 {
     public static IPropagator CreatePropagator(SolverOptions options) => options.Propagation switch
@@ -18,7 +19,14 @@ internal static class SolverFactory
         _ => throw new ArgumentOutOfRangeException(nameof(options))
     };
 
-    public static IDecisionHeuristic CreateHeuristic(SolverOptions options) => new FirstUnassigned();
+    public static IDecisionHeuristic CreateHeuristic(SolverOptions options) => options.Heuristic switch
+    {
+        HeuristicKind.First => new FirstUnassigned(),
+        HeuristicKind.Random => new RandomHeuristic(options.RandomSeed),
+        HeuristicKind.JeroslowWang => new JeroslowWang(),
+        HeuristicKind.Vsids => new Vsids(),
+        _ => throw new ArgumentOutOfRangeException(nameof(options))
+    };
 
     // Restarty davaji smysl jen v CDCL; "zadne" vrati null a engine pak vi ze nerestartuje.
     public static IRestartStrategy? CreateRestart(SolverOptions options) => options.Restart switch
