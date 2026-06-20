@@ -1,4 +1,5 @@
 # verzujeme jen solver/ a reports/, zbytek (slides, docs, hws, tasks) jsou podklady
+# build artefakty a scratch soubory resi solver/.gitignore
 /*
 !/.gitignore
 !/solver/
