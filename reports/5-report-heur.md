@@ -15,14 +15,10 @@ Netrivialni heuristiky jasne porazi random i first, a cim tezsi instance, tim ve
 
 ## Testovování
 
-Statistiky jdou na stderr (`c statistiky:` ...), tabulky nize jsem posbiral skriptem co projel instance pres `solve` a zprumeroval. Konfigurace (sloupec): vsids = `--cdcl --heuristic vsids`, jw = `--cdcl --heuristic jw`, random = `--cdcl --heuristic random --seed 1`, first = `--cdcl --heuristic first`.
-
 ### Splnitelny 3SAT (uf100)
 
 ```powershell
-Get-ChildItem benchmarks/rnd3sat/uf100/*.cnf | Select-Object -First 30 | ForEach-Object {
-  dotnet run --project src/SatSolver -c Release -- solve $_.FullName --cdcl --heuristic vsids
-}
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/rnd3sat/uf100 --avg --timeout 15 --limit 30 --configs "vsids:--cdcl --heuristic vsids;jw:--cdcl --heuristic jw;random:--cdcl --heuristic random --seed 1;first:--cdcl --heuristic first"
 ```
 
 | konfigurace | #instanci | SAT | UNSAT | TIMEOUT | avg cas [ms] | avg rozhodnuti | avg propagace | avg konflikty | avg prohlednuto |
@@ -35,9 +31,7 @@ Get-ChildItem benchmarks/rnd3sat/uf100/*.cnf | Select-Object -First 30 | ForEach
 ### Nesplnitelny 3SAT (uuf100)
 
 ```powershell
-Get-ChildItem benchmarks/rnd3sat/uuf100/*.cnf | Select-Object -First 30 | ForEach-Object {
-  dotnet run --project src/SatSolver -c Release -- solve $_.FullName --cdcl --heuristic vsids
-}
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/rnd3sat/uuf100 --avg --timeout 15 --limit 30 --configs "vsids:--cdcl --heuristic vsids;jw:--cdcl --heuristic jw;random:--cdcl --heuristic random --seed 1;first:--cdcl --heuristic first"
 ```
 
 | konfigurace | #instanci | SAT | UNSAT | TIMEOUT | avg cas [ms] | avg rozhodnuti | avg propagace | avg konflikty | avg prohlednuto |

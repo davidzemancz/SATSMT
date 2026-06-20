@@ -5,8 +5,9 @@ namespace SatSolver.Cli;
 // =====================================================================
 // Prvni argument je prikaz, zbytek jsou jeho parametry:
 //   formula2cnf  - Tseitinovo kodovani NNF -> DIMACS (ukol 1)
-//   solve        - reseni SAT (ukol 2, zatim DPLL)
+//   solve        - obecne reseni (DPLL/CDCL, ukoly 2-5)
 //   dpll         - zkratka pro zakladni DPLL (ukol 2)
+//   bench        - davkove mereni do reportu
 //   help         - napoveda
 public static class CliEntryPoint
 {
@@ -32,6 +33,7 @@ public static class CliEntryPoint
                 "formula2cnf" => Formula2CnfCommand.Run(rest),
                 "solve" => SolveCommand.Run(rest),
                 "dpll" => SolveCommand.Run(PrependDpllDefaults(rest)),
+                "bench" => BenchCommand.Run(rest),
                 "help" or "--help" or "-h" => PrintUsageAndOk(),
                 _ => UnknownCommand(command)
             };
@@ -43,10 +45,10 @@ public static class CliEntryPoint
         }
     }
 
-    // "dpll" je jen solve s predvyplnenym adjacency propagatorem (ukol 2).
+    // "dpll" je jen solve s predvyplnenymi flagy ze zakladniho DPLL (ukol 2).
     private static string[] PrependDpllDefaults(string[] rest)
     {
-        var defaults = new[] { "--prop", "adj" };
+        var defaults = new[] { "--dpll", "--prop", "adj", "--heuristic", "first" };
         return defaults.Concat(rest).ToArray();
     }
 
@@ -73,16 +75,28 @@ SAT solver - pouziti:
   formula2cnf [vstup [vystup]] [--equiv | --implication]
       Prevede formuli v NNF (SMT-LIB) na CNF v DIMACS pomoci Tseitina.
       Bez souboru cte stdin a pise na stdout.
+      --equiv        definice hradel jako ekvivalence (vychozi)
+      --implication  jen implikace zleva doprava (Plaisted-Greenbaum)
 
   solve [vstup] [prepinace]
-      Vyresi SAT (zatim DPLL). Format se pozna podle pripony (.cnf / .sat)
+      Vyresi SAT. Format se pozna podle pripony (.cnf = DIMACS, .sat = SMT-LIB)
       nebo prepinacem --format cnf|sat.
-      --prop adj                   propagace (adjacency lists)
-      --time-limit S               casovy limit v sekundach
+      --dpll | --cdcl              rezim hledani (vychozi --cdcl)
+      --prop adj | watched         propagace (vychozi watched)
+      --heuristic first|random|jw|vsids   rozhodovaci heuristika (vychozi vsids)
+      --restart none|geom|luby     restarty (vychozi luby v CDCL)
+      --no-learn                   vypnout uceni klauzuli (i v CDCL rezimu)
+      --no-delete                  nemazat naucene klauzule
+      --phase-saving | --no-phase-saving
+      --assume "1 -3 5"            predpoklady (literaly) jako rozhodnuti
+      --seed N                     seed pro nahodnou heuristiku
       --format cnf|sat             vynutit format vstupu
 
   dpll [vstup]
-      Zkratka pro zakladni DPLL (= solve --prop adj).
+      Zkratka pro zakladni DPLL (= solve --dpll --prop adj --heuristic first).
+
+  bench [prepinace]
+      Davkove mereni na benchmarkach (viz bench --help).
 """);
     }
 }

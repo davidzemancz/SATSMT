@@ -7,8 +7,6 @@ Cas reseni roste s velikosti instance zhruba exponencialne, coz sedi s tim, ze D
 
 ## Testovování
 
-Statistiky jdou na stderr (`c statistiky:` ...), tabulky nize jsem posbiral skriptem co projel instance pres `dpll` a stderr zprumeroval.
-
 ```powershell
 cd solver
 ```
@@ -16,50 +14,44 @@ cd solver
 ### Examples z Task 1
 
 ```powershell
-dotnet run --project src/SatSolver -c Release -- dpll examples/task1/nested_8.sat --prop adj
+dotnet run --project src/SatSolver -c Release -- bench examples/task1 --configs "dpll:--dpll --prop adj --heuristic first"
 ```
-| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto |
-|---|---|---|--:|--:|--:|--:|--:|
-| nested_5.sat | dpll | SAT | 0.8 | 6 | 16 | 0 | 50 |
-| nested_8.sat | dpll | SAT | 0.7 | 65 | 1597 | 31 | 4808 |
-| toy_100.sat | dpll | SAT | 0.1 | 100 | 99 | 0 | 395 |
-| toy_5.sat | dpll | SAT | 0.0 | 5 | 4 | 0 | 15 |
-| toy_50.sat | dpll | SAT | 0.0 | 50 | 49 | 0 | 195 |
+| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto | restarty |
+|---|---|---|--:|--:|--:|--:|--:|--:|
+| nested_5.sat | dpll | SAT | 0.8 | 6 | 16 | 0 | 50 | 0 |
+| nested_8.sat | dpll | SAT | 0.7 | 65 | 1597 | 31 | 4808 | 0 |
+| toy_100.sat | dpll | SAT | 0.1 | 100 | 99 | 0 | 395 | 0 |
+| toy_5.sat | dpll | SAT | 0.0 | 5 | 4 | 0 | 15 | 0 |
+| toy_50.sat | dpll | SAT | 0.0 | 50 | 49 | 0 | 195 | 0 |
 
 ### AIS
 
 ```powershell
-dotnet run --project src/SatSolver -c Release -- dpll benchmarks/ais/ais10.cnf --prop adj
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/ais/ais6.cnf benchmarks/ais/ais8.cnf benchmarks/ais/ais10.cnf --configs "dpll:--dpll --prop adj --heuristic first" --timeout 30
 ```
 
-| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto |
-|---|---|---|--:|--:|--:|--:|--:|
-| ais6.cnf | dpll | SAT | 1.5 | 57 | 515 | 27 | 3234 |
-| ais8.cnf | dpll | SAT | 2.4 | 550 | 7423 | 273 | 59100 |
-| ais10.cnf | dpll | SAT | 42.5 | 8973 | 138777 | 4484 | 1270788 |
+| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto | restarty |
+|---|---|---|--:|--:|--:|--:|--:|--:|
+| ais6.cnf | dpll | SAT | 1.5 | 57 | 515 | 27 | 3234 | 0 |
+| ais8.cnf | dpll | SAT | 2.4 | 550 | 7423 | 273 | 59100 | 0 |
+| ais10.cnf | dpll | SAT | 42.5 | 8973 | 138777 | 4484 | 1270788 | 0 |
 
 ### PHOLE
 
 ```powershell
-dotnet run --project src/SatSolver -c Release -- dpll benchmarks/phole/hole7.cnf --prop adj
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/phole/hole6.cnf benchmarks/phole/hole7.cnf --configs "dpll:--dpll --prop adj --heuristic first" --timeout 30
 ```
 
-| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto |
-|---|---|---|--:|--:|--:|--:|--:|
-| hole6.cnf | dpll | UNSAT | 6.3 | 6490 | 29322 | 3246 | 63161 |
-| hole7.cnf | dpll | UNSAT | 43.2 | 65560 | 318495 | 32781 | 722098 |
+| instance | konfigurace | vysledek | cas [ms] | rozhodnuti | propagace | konflikty | prohlednuto | restarty |
+|---|---|---|--:|--:|--:|--:|--:|--:|
+| hole6.cnf | dpll | UNSAT | 6.3 | 6490 | 29322 | 3246 | 63161 | 0 |
+| hole7.cnf | dpll | UNSAT | 43.2 | 65560 | 318495 | 32781 | 722098 | 0 |
 
 ### Random 3 SAT
 
 ```powershell
-foreach ($c in 'uf20','uf50','uf75','uf100') {
-  Write-Host "=== $c ==="
-  Get-ChildItem "benchmarks/rnd3sat/$c/*.cnf" | Select-Object -First 50 | ForEach-Object {
-    dotnet run --project src/SatSolver -c Release -- dpll $_.FullName --prop adj
-  }
-}
+  foreach ($c in 'uf20','uf50','uf75','uf100') { Write-Host "=== $c ==="; dotnet run --project src/SatSolver -c Release -- bench "benchmarks/rnd3sat/$c" --configs "dpll:--dpll --prop adj --heuristic first" --timeout 30 --avg --limit 50 }
 ```
-(prumery pres prvnich 50 instanci kazde velikosti, statistiky ze stderr)
 
 #### uf20
 

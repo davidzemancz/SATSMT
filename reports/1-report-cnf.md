@@ -5,11 +5,14 @@ https://ktiml.mff.cuni.cz/~kucerap/satsmt/practical/task_tseitin.php
 
 ## Benchmark
 
-Prevod NNF (.sat) na DIMACS CNF dela prikaz `formula2cnf`. Default pouziva ekvivalence, `--implication` vynuti jen l2r implikace.
+Defaultní nastavení s ekvivalencemi.
 ```powershell
 cd solver
-dotnet run --project src/SatSolver -c Release -- formula2cnf benchmarks/task1/nested_8.sat
-dotnet run --project src/SatSolver -c Release -- formula2cnf benchmarks/task1/nested_8.sat --implication
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/task1 --convert
 ```
 
-Pres vsechny instance v benchmarks/task1 a obe nastaveni jsem to prohnal kratkym foreach skriptem.
+Porovnani nastaveni s ekvivalencemi a pouze l2r implikacemi.
+```powershell
+ dotnet run --project src/SatSolver -c Release -- bench benchmarks/task1 --convert --configs "equiv:--equiv;impl:--implication"
+```
+

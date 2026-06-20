@@ -6,14 +6,10 @@ Nejvic je videt, ze cele CDCL stoji a pada na uceni klauzuli. Bez nej (no-learn)
 
 ## Testovování
 
-Statistiky jdou na stderr (`c statistiky:` ...), tabulky nize jsem posbiral skriptem co projel instance pres `solve` a zprumeroval. Konfigurace (sloupec): vse = default `--cdcl`, geom = `--restart geom`, no-min = `--no-minimize`, no-del = `--no-delete`, no-phase = `--no-phase-saving`, no-restart = `--restart none`, no-learn = `--no-learn`.
-
 ### Nesplnitelny 3SAT
 
 ```powershell
-Get-ChildItem benchmarks/rnd3sat/uuf100/*.cnf | Select-Object -First 30 | ForEach-Object {
-  dotnet run --project src/SatSolver -c Release -- solve $_.FullName --cdcl
-}
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/rnd3sat/uuf100 --avg --timeout 30 --limit 30 --configs "vse:;geom:--restart geom;no-min:--no-minimize;no-del:--no-delete;no-phase:--no-phase-saving;no-restart:--restart none;no-learn:--no-learn"
 ```
 
 | konfigurace | #instanci | SAT | UNSAT | TIMEOUT | avg cas [ms] | avg rozhodnuti | avg propagace | avg konflikty | avg prohlednuto |
@@ -29,9 +25,7 @@ Get-ChildItem benchmarks/rnd3sat/uuf100/*.cnf | Select-Object -First 30 | ForEac
 ### Splnitelny 3SAT
 
 ```powershell
-Get-ChildItem benchmarks/rnd3sat/uf100/*.cnf | Select-Object -First 30 | ForEach-Object {
-  dotnet run --project src/SatSolver -c Release -- solve $_.FullName --cdcl
-}
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/rnd3sat/uf100 --avg --timeout 30 --limit 30 --configs "vse:;geom:--restart geom;no-min:--no-minimize;no-del:--no-delete;no-phase:--no-phase-saving;no-restart:--restart none;no-learn:--no-learn"
 ```
 
 | konfigurace | #instanci | SAT | UNSAT | TIMEOUT | avg cas [ms] | avg rozhodnuti | avg propagace | avg konflikty | avg prohlednuto |
@@ -50,10 +44,8 @@ https://www.cs.ubc.ca/~hoos/SATLIB/Benchmarks/SAT/SW-GCP/sw100-8-lp0-c5.tar.gz
 Sw100 jsou pro CDCL skoro trivialni — prumerne jen ~3 konflikty  instanci, takze mazani, minimalizace, restarty ani typ restartu nemaji co delat a vsechny radky cca vyjdou identicky. Rozdil je videt jen u no-learn (cisty DPLL), kde bez uceni naroste pocet konfliktu na ~300.
 
 ```powershell
-Get-ChildItem benchmarks/sw100/*.cnf | ForEach-Object {
-  dotnet run --project src/SatSolver -c Release -- solve $_.FullName --cdcl
-}
-```
+dotnet run --project src/SatSolver -c Release -- bench benchmarks/sw100 --avg  --timeout 30 --configs "vse:;geom:--restart geom;no-min:--no-minimize;no-d  el:--no-delete;no-phase:--no-phase-saving;no-restart:--restart  none;no-learn:--no-learn"
+ ```
 
  | konfigurace | #instanci | SAT | UNSAT | TIMEOUT | avg cas [ms] | avg rozhodnuti | avg propagace | avg konflikty | avg prohlednuto |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
