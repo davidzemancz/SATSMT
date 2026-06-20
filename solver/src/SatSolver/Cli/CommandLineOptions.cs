@@ -80,6 +80,11 @@ public static class CommandLineOptions
                     // pozor: parsuju s invariant culture, jinak by to na cz locale chtelo carku misto tecky
                     options.TimeLimitSeconds = double.Parse(Value(args, ref i), CultureInfo.InvariantCulture);
                     break;
+                case "--assume":
+                    options.Assumptions = Value(args, ref i)
+                        .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(int.Parse).ToArray();
+                    break;
                 case "--format":
                     format = Value(args, ref i) switch
                     {

@@ -51,6 +51,7 @@ public sealed partial class SearchEngine
     private long _conflictsSinceRestart;
     private long _restartThreshold;
     private int _maxLearned;
+    private int _assumptionIndex;
     private readonly Stopwatch _stopwatch = new();
 
     public SearchEngine(CnfFormula formula, SolverOptions options)
@@ -260,7 +261,9 @@ public sealed partial class SearchEngine
                     continue;
                 }
 
-                int decision = NextDecisionLiteral();
+                int decision = NextDecisionLiteral(out bool assumptionFailed);
+                if (assumptionFailed)
+                    return SatResult.Unsatisfiable; // predpoklad je v rozporu s formuli
                 if (decision == 0)
                     return SatResult.Satisfiable;   // vsechno prirazene a zadny konflikt => mame model!
 
@@ -269,9 +272,25 @@ public sealed partial class SearchEngine
         }
     }
 
-    // Vybere dalsi vetvici literal pres heuristiku. Vrati 0 kdyz uz je vsechno prirazene.
-    private int NextDecisionLiteral()
+    // Vybere dalsi vetvici literal. Nejdriv spotrebuje predpoklady (assumptions) jako
+    // rozhodnuti (jedno na level), az potom se zepta heuristiky. Vrati 0 kdyz uz je
+    // vsechno prirazene. Pres assumptionFailed dava vedet ze nejaky predpoklad uz je
+    // falsifikovany (UNSAT pod predpoklady).
+    private int NextDecisionLiteral(out bool assumptionFailed)
     {
+        assumptionFailed = false;
+
+        // 1) predpoklady maji prednost pred heuristikou
+        while (_assumptionIndex < _options.Assumptions.Count)
+        {
+            int a = _options.Assumptions[_assumptionIndex];
+            if (LiteralIsTrue(a)) { _assumptionIndex++; continue; } // uz plati, jdu dal
+            if (LiteralIsFalse(a)) { assumptionFailed = true; return 0; }
+            _assumptionIndex++;
+            return a; // predpoklad pouziju jako vetvici literal
+        }
+
+        // 2) jinak se zeptam heuristiky
         int lit = _heuristic.PickBranchLiteral();
         if (lit == 0)
             return 0;
@@ -310,6 +329,7 @@ public sealed partial class SearchEngine
     {
         _stats.Restarts++;
         Backtrack(0);
+        _assumptionIndex = 0;
         _conflictsSinceRestart = 0;
         _restartThreshold = _restart!.NextThreshold();
     }

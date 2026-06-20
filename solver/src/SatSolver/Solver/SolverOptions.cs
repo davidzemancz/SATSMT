@@ -73,6 +73,9 @@ public sealed class SolverOptions
     // Seed pro nahodnou heuristiku, at jdou vysledky zopakovat.
     public int RandomSeed { get; set; } = 1;
 
+    // Predpoklady (literaly) co se pouziji jako rozhodnuti jeste pred heuristikou.
+    public IReadOnlyList<int> Assumptions { get; set; } = Array.Empty<int>();
+
     // Zakladni jednotka restartu (Luby: nasobek, geometric: pocatecni prah).
     public int RestartBase { get; set; } = 100;
 
