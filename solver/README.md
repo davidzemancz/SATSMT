@@ -27,5 +27,3 @@ Hlavni prepinace u solve:
 - src/SatSolver/  zdrojaky (Cnf, Parsing, Encoding, Solver, Heuristics, Restarts, Cli)
 - benchmarks/     testovaci instance
 - examples/       male ukazky
-
-Komentare v kodu jsou cesky a neformalne (bez diakritiky).

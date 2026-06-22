@@ -4,3 +4,8 @@
 !/.gitignore
 !/solver/
 !/reports/
+!/tasks/
+/tasks/*
+!/tasks/n-queens/
+tasks/n-queens/__pycache__/
+tasks/n-queens/_cnf/
