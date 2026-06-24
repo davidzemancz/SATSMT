@@ -1,0 +1,2 @@
+# Nesplnitelne: AB + AB = AB nema reseni (B by muselo byt 0, ale je vedouci).
+AB + AB = AB

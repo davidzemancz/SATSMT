@@ -1,0 +1,2 @@
+# Disjunkce s negaci: plati jedna z rovnic, ale soucasne NE druha.
+((TWO + TWO = FOUR) || (ONE + ONE = TWO)) && (NOT (ODD + ODD = EVEN))

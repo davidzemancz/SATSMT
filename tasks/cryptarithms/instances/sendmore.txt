@@ -1,0 +1,2 @@
+# Nejslavnejsi kryptaritmus (Dudeney, 1924). Baze 10, jednoznacne reseni.
+SEND + MORE = MONEY

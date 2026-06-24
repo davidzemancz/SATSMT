@@ -1,0 +1,3 @@
+# Konjunkce dvou rovnic se sdilenymi pismeny: soucet musi platit i po obraceni
+# cislic v kazdem cisle (35 + 12 = 47  a zaroven  53 + 21 = 74).
+(AB + CD = EF) && (BA + DC = FE)

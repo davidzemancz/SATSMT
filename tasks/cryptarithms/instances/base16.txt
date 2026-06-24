@@ -1,0 +1,2 @@
+# Kryptaritmus v sestnactkove bazi.
+ABC + DEF = GHIJ

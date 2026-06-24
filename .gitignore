@@ -9,3 +9,6 @@
 !/tasks/n-queens/
 tasks/n-queens/__pycache__/
 tasks/n-queens/_cnf/
+/tasks/*
+!/tasks/cryptarithms/
+tasks/cryptarithms/__pycache__/

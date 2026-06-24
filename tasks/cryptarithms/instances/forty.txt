@@ -1,0 +1,2 @@
+# FORTY + TEN + TEN = SIXTY (jednoznacne)
+FORTY + TEN + TEN = SIXTY
